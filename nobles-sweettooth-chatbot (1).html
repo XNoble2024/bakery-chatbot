@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noble's Sweet Tooth – Order Chat</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Lato', sans-serif; background: #fdf8f4; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
+  #chat-container { width: 100%; max-width: 480px; background: #fff; border-radius: 20px; box-shadow: 0 8px 40px rgba(180,120,80,0.13); overflow: hidden; display: flex; flex-direction: column; height: 680px; }
+  #chat-header { background: linear-gradient(135deg, #b5704a 0%, #d4956b 100%); padding: 18px 22px 16px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .header-logo { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .header-text h2 { font-family: 'Playfair Display', serif; font-size: 17px; color: #fff; font-weight: 600; line-height: 1.2; }
+  .header-text p { font-size: 12px; color: rgba(255,255,255,0.82); margin-top: 2px; font-weight: 300; }
+  .online-dot { width: 8px; height: 8px; background: #7dde92; border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  #messages { flex: 1; overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-thumb { background: #e8d5c4; border-radius: 4px; }
+  .msg { display: flex; gap: 8px; max-width: 88%; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #b5704a, #d4956b); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .bubble { padding: 11px 15px; border-radius: 18px; font-size: 14px; line-height: 1.55; }
+  .msg.bot .bubble { background: #f5ede5; border-bottom-left-radius: 5px; color: #3a2a1e; }
+  .msg.user .bubble { background: linear-gradient(135deg, #b5704a, #d4956b); color: #fff; border-bottom-right-radius: 5px; }
+  .typing-bubble { background: #f5ede5; border-radius: 18px; border-bottom-left-radius: 5px; padding: 13px 16px; display: flex; gap: 5px; align-items: center; }
+  .typing-bubble span { width: 7px; height: 7px; background: #b5704a; border-radius: 50%; animation: bounce 1.2s infinite; }
+  .typing-bubble span:nth-child(2){animation-delay:0.2s} .typing-bubble span:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+  .quick-replies { display: flex; flex-wrap: wrap; gap: 7px; padding: 4px 0 2px; margin-left: 38px; }
+  .qr-btn { background: #fff; border: 1.5px solid #d4956b; color: #b5704a; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-family: 'Lato', sans-serif; cursor: pointer; transition: all 0.18s; }
+  .qr-btn:hover { background: #b5704a; color: #fff; }
+  #input-area { border-top: 1px solid #f0e4d8; padding: 12px 14px; flex-shrink: 0; background: #fff; }
+  #image-preview { display: none; position: relative; margin-bottom: 8px; width: 70px; }
+  #image-preview img { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; border: 2px solid #d4956b; }
+  #image-preview button { position: absolute; top: -6px; right: -6px; background: #b5704a; color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #input-row { display: flex; gap: 8px; align-items: flex-end; }
+  #msg-input { flex: 1; border: 1.5px solid #e8d5c4; border-radius: 22px; padding: 10px 16px; font-family: 'Lato', sans-serif; font-size: 14px; resize: none; outline: none; max-height: 100px; line-height: 1.4; background: #fdf8f4; color: #3a2a1e; transition: border-color 0.2s; }
+  #msg-input:focus { border-color: #b5704a; }
+  #msg-input::placeholder { color: #c4a48a; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.18s; }
+  #attach-btn { background: #f5ede5; color: #b5704a; font-size: 18px; }
+  #attach-btn:hover { background: #e8d5c4; }
+  #send-btn { background: linear-gradient(135deg, #b5704a, #d4956b); color: #fff; font-size: 17px; }
+  #send-btn:hover { opacity: 0.9; transform: scale(1.05); }
+  #send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  #file-input { display: none; }
+  .price-card { background: #fff9f5; border: 1.5px solid #d4956b; border-radius: 14px; padding: 13px 15px; margin-top: 4px; font-size: 13.5px; color: #3a2a1e; }
+  .price-card .range { font-family: 'Playfair Display', serif; font-size: 20px; color: #b5704a; font-weight: 600; margin: 4px 0 6px; }
+  .price-card .note { font-size: 12px; color: #8a6a55; margin-top: 6px; line-height: 1.45; }
+  .lead-card { background: #f5ede5; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #3a2a1e; line-height: 1.7; margin-top: 4px; }
+  .lead-card strong { display: block; font-family: 'Playfair Display', serif; font-size: 15px; color: #b5704a; margin-bottom: 8px; }
+  .open-hb-btn { display: block; width: 100%; margin-top: 12px; background: linear-gradient(135deg, #b5704a, #d4956b); color: #fff; border: none; border-radius: 22px; padding: 11px 16px; font-family: 'Lato', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.18s; }
+  .open-hb-btn:hover { opacity: 0.9; }
+  .disclaimer { font-size: 11px; color: #c4a48a; text-align: center; padding: 8px 0 2px; line-height: 1.4; }
+
+  /* HoneyBook Modal */
+  #hb-overlay { display: none; position: fixed; inset: 0; background: rgba(58,42,30,0.75); z-index: 9999; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
+  #hb-overlay.active { display: flex; }
+  #hb-modal { background: #fff; border-radius: 20px; width: 100%; max-width: 540px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+  #hb-modal-head { background: linear-gradient(135deg, #b5704a 0%, #d4956b 100%); padding: 16px 20px; border-radius: 20px 20px 0 0; display: flex; align-items: flex-start; justify-content: space-between; }
+  #hb-modal-head h3 { font-family: 'Playfair Display', serif; color: #fff; font-size: 16px; font-weight: 600; }
+  #hb-modal-head p { color: rgba(255,255,255,0.85); font-size: 12px; margin-top: 3px; }
+  #hb-close { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; flex-shrink: 0; margin-left: 12px; }
+  #hb-prefill { padding: 14px 20px; background: #fdf8f4; border-bottom: 1px solid #f0e4d8; font-size: 13px; color: #3a2a1e; line-height: 1.75; }
+  #hb-prefill .plabel { font-family: 'Playfair Display', serif; font-size: 13px; color: #b5704a; font-weight: 600; display: block; margin-bottom: 8px; }
+  #hb-prefill b { color: #7a4a2a; }
+  #hb-note { padding: 10px 20px; background: #fff9f5; border-bottom: 1px solid #f0e4d8; font-size: 12px; color: #8a6a55; line-height: 1.55; }
+  #hb-form-wrap { padding: 4px 0 8px; min-height: 500px; }
+</style>
+</head>
+<body>
+
+<div id="chat-container">
+  <div id="chat-header">
+    <div class="header-logo">🎂</div>
+    <div class="header-text">
+      <h2>Noble's Sweet Tooth</h2>
+      <p><span class="online-dot"></span>Custom Order Assistant · Bakersfield, CA</p>
+    </div>
+  </div>
+  <div id="messages"></div>
+  <div id="input-area">
+    <div id="image-preview">
+      <img id="preview-img" src="" alt="Preview">
+      <button onclick="clearImage()">✕</button>
+    </div>
+    <div id="input-row">
+      <button class="icon-btn" id="attach-btn" onclick="document.getElementById('file-input').click()" title="Upload photo">📎</button>
+      <input type="file" id="file-input" accept="image/*" onchange="handleImage(event)">
+      <textarea id="msg-input" placeholder="Describe your dream cake or upload a photo..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="icon-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+    <div class="disclaimer">Prices are estimates. Final quote confirmed by Noble's after deposit.</div>
+  </div>
+</div>
+
+<!-- HoneyBook Modal -->
+<div id="hb-overlay">
+  <div id="hb-modal">
+    <div id="hb-modal-head">
+      <div>
+        <h3>🎂 Submit Your Order to Noble's</h3>
+        <p>Your chat details are below — copy them into the form</p>
+      </div>
+      <button id="hb-close" onclick="closeHBModal()">✕</button>
+    </div>
+    <div id="hb-prefill">
+      <span class="plabel">Your Order Summary (from our chat)</span>
+      <div id="hb-prefill-content"></div>
+    </div>
+    <div id="hb-note">
+      ✏️ Copy your details above into the contact form below. Once submitted, Noble's receives it directly in HoneyBook and will follow up within 24 hours. A <b>60% deposit</b> secures your date.
+    </div>
+    <div id="hb-form-wrap">
+      <div class="hb-p-63edea2ce650a10008d385f8-1"></div>
+      <img height="1" width="1" style="display:none" src="https://www.honeybook.com/p.png?pid=63edea2ce650a10008d385f8">
+    </div>
+  </div>
+</div>
+
+<script>
+(function(h,b,s,n,i,p,e,t){
+  h._HB_=h._HB_||{};h._HB_.pid=i;
+  t=b.createElement(s);t.type="text/javascript";t.async=!0;t.src=n;
+  e=b.getElementsByTagName(s)[0];e.parentNode.insertBefore(t,e);
+})(window,document,"script","https://widget.honeybook.com/assets_users_production/websiteplacements/placement-controller.min.js","63edea2ce650a10008d385f8");
+
+const SYSTEM_PROMPT = `You are the custom order assistant for Noble's Sweet Tooth Cottage Bakery in Bakersfield, California. You are warm, professional, and enthusiastic about beautiful custom cakes. Your job is to help customers get a price range estimate for their custom cake and collect their contact info so the owner can follow up.
+
+BAKERY INFO:
+- Name: Noble's Sweet Tooth Cottage Bakery
+- Phone: (661) 584-6884
+- Email: noblessweettooth2022@gmail.com
+- Lead time: 4 days to 2 months out
+- Deposit required: 60% to hold the date
+- Specialties: Custom cakes, fondant work, sculpted designs, tiered cakes, dessert tables, cookies, macarons
+- Dietary options: vegan, eggless, gluten free (add 15-20% to base price)
+
+PRICING GUIDE (always give a range, never a single price):
+- Basic single-tier (6-9 inch, simple buttercream): $110-$135
+- Simple single-tier with edible image or minimal design: $130-$155
+- Drip cake (colored ganache drip, sprinkles, fresh flowers): $160-$185
+- Full custom single-tier fondant (6 inch, 3 layer): $150-$175
+- Full custom single-tier fondant (9 inch, 3 layer): $185-$215
+- Full custom single-tier with 3D sculpted toppers or toys: $175-$215
+- Full custom themed 2-tier fondant (detailed scenes, sculpted elements): $280-$350
+- Simple 3-tier (elegant buttercream, flowers): $350-$400
+- Simple large 3-tier (elaborate piping, all buttercream): $500-$550
+- Semi-custom 3-tier (fondant/flowers, mid complexity): $350-$420
+- Full custom 3-tier (fondant, sculpted elements): $550-$670
+- Sculpted/novelty cakes (animal face, shaped object, 3D character): $175-$350+
+- Sculpted novelty PLUS tiered base (carved cake topper + tiers): $450-$600
+- Add 15-20% for vegan, eggless, or gluten free
+- Rice Krispie structural elements: additional charge
+
+COMPLEXITY SIGNALS:
+- Simple = smooth buttercream, basic flowers, edible image, minimal piping
+- Medium = fondant covered, hand-painted details, custom lettering, drip effect
+- Full custom = extensive fondant sculpting, 3D toppers, detailed scenes, multiple custom elements
+- Each additional tier adds significant labor
+
+CONVERSATION FLOW:
+1. Greet warmly, ask about event type and date
+2. Ask about servings/size
+3. Ask about design vision (analyze uploaded photos if shared)
+4. Ask about dietary needs
+5. Give a price RANGE
+6. Collect full name, best email, best phone number
+7. Confirm all details in a clean summary
+8. Tell them their request will go to Noble's via HoneyBook and they'll hear back within 24 hours
+
+RULES:
+- Always give a RANGE, never a single price
+- Never go below minimums - if pushed, explain scratch-made quality and Escoffier pastry training
+- Keep responses concise and friendly
+- After collecting contact info, output this exact JSON at the end of your message:
+|||LEAD_DATA|||{"name":"...","email":"...","phone":"...","event":"...","eventDate":"...","servings":"...","design":"...","dietary":"...","estimate":"...","notes":"..."}|||END_LEAD|||`;
+
+let pendingImageBase64 = null;
+let pendingImageType = null;
+let conversationHistory = [];
+let leadCollected = false;
+let currentLead = null;
+
+function addMessage(role, text, extras) {
+  const messagesDiv = document.getElementById('messages');
+  if (role === 'typing') {
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.id = 'typing-indicator';
+    div.innerHTML = `<div class="avatar">🎂</div><div class="typing-bubble"><span></span><span></span><span></span></div>`;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return;
+  }
+  const existing = document.getElementById('typing-indicator');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  if (role === 'bot') {
+    const cleanText = text.replace(/\|\|\|LEAD_DATA\|\|\|[\s\S]*?\|\|\|END_LEAD\|\|\|/g, '').trim();
+    let html = `<div class="avatar">🎂</div><div>`;
+    if (extras && extras.priceRange) {
+      html += `<div class="price-card">
+        <div style="font-size:12px;color:#8a6a55;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Estimated Price Range</div>
+        <div class="range">${extras.priceRange}</div>
+        <div class="note">⭐ Final price confirmed by Noble's. 60% deposit holds your date.</div>
+      </div>`;
+    }
+    if (cleanText) html += `<div class="bubble">${cleanText.replace(/\n/g, '<br>')}</div>`;
+    if (extras && extras.leadSummary) {
+      html += `<div class="lead-card">
+        <strong>🎉 Order Request Ready!</strong>
+        ${extras.leadSummary}
+        <button class="open-hb-btn" onclick="openHBModal()">📋 Send to Noble's via HoneyBook →</button>
+      </div>`;
+    }
+    html += `</div>`;
+    div.innerHTML = html;
+    if (extras && extras.quickReplies) {
+      const qr = document.createElement('div');
+      qr.className = 'quick-replies';
+      extras.quickReplies.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className = 'qr-btn';
+        btn.textContent = label;
+        btn.onclick = () => { document.getElementById('msg-input').value = label; sendMessage(); };
+        qr.appendChild(btn);
+      });
+      div.appendChild(qr);
+    }
+  } else {
+    let content = `<div class="bubble">${text.replace(/\n/g, '<br>')}`;
+    if (extras && extras.imageThumb) content += `<br><img src="${extras.imageThumb}" style="width:120px;border-radius:8px;margin-top:6px;display:block;">`;
+    content += `</div>`;
+    div.innerHTML = content;
+  }
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+async function callClaude(userText, imageBase64, imageType) {
+  const userContent = [];
+  if (imageBase64 && imageType) userContent.push({ type: 'image', source: { type: 'base64', media_type: imageType, data: imageBase64 } });
+  userContent.push({ type: 'text', text: userText });
+  conversationHistory.push({ role: 'user', content: userContent });
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM_PROMPT, messages: conversationHistory })
+  });
+  const data = await response.json();
+  const assistantText = data.content.map(b => b.text || '').join('');
+  conversationHistory.push({ role: 'assistant', content: assistantText });
+  return assistantText;
+}
+
+function extractLeadData(text) {
+  const match = text.match(/\|\|\|LEAD_DATA\|\|\|([\s\S]*?)\|\|\|END_LEAD\|\|\|/);
+  if (!match) return null;
+  try { return JSON.parse(match[1]); } catch { return null; }
+}
+
+function extractPriceRange(text) {
+  const match = text.match(/\$[\d,]+\s*[-–—]\s*\$[\d,]+(\+)?/);
+  return match ? match[0] : null;
+}
+
+function buildLeadSummary(lead) {
+  return `<b>Name:</b> ${lead.name||'—'}<br>
+    <b>Email:</b> ${lead.email||'—'}<br>
+    <b>Phone:</b> ${lead.phone||'—'}<br>
+    <b>Event:</b> ${lead.event||'—'} on ${lead.eventDate||'—'}<br>
+    <b>Servings:</b> ${lead.servings||'—'}<br>
+    <b>Design:</b> ${lead.design||'—'}<br>
+    <b>Dietary:</b> ${lead.dietary||'None specified'}<br>
+    <b>Estimate:</b> ${lead.estimate||'—'}${lead.notes?`<br><b>Notes:</b> ${lead.notes}`:''}`;
+}
+
+function openHBModal() {
+  if (!currentLead) return;
+  document.getElementById('hb-prefill-content').innerHTML = buildLeadSummary(currentLead);
+  document.getElementById('hb-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHBModal() {
+  document.getElementById('hb-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('hb-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeHBModal();
+});
+
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text && !pendingImageBase64) return;
+  addMessage('user', text || '📷 Shared an inspiration photo', pendingImageBase64 ? { imageThumb: `data:${pendingImageType};base64,${pendingImageBase64}` } : null);
+  const imgB64 = pendingImageBase64, imgType = pendingImageType;
+  input.value = ''; input.style.height = 'auto'; clearImage();
+  document.getElementById('send-btn').disabled = true;
+  addMessage('typing');
+  try {
+    const response = await callClaude(text || 'I uploaded a photo of a cake style I love.', imgB64, imgType);
+    const lead = extractLeadData(response);
+    const priceRange = extractPriceRange(response);
+    const extras = {};
+    if (priceRange) extras.priceRange = priceRange;
+    if (lead && !leadCollected) {
+      leadCollected = true;
+      currentLead = lead;
+      extras.leadSummary = buildLeadSummary(lead);
+      setTimeout(() => openHBModal(), 1400);
+    }
+    if (!priceRange && conversationHistory.length <= 3) {
+      extras.quickReplies = ['Birthday cake 🎂', 'Wedding cake 💍', 'Baby shower 🍼', 'Quinceañera 👑'];
+    }
+    addMessage('bot', response, extras);
+  } catch(err) {
+    addMessage('bot', "I'm having a little trouble connecting right now. Please call us at (661) 584-6884 or email noblessweettooth2022@gmail.com — we'd love to help! 🎂");
+  }
+  document.getElementById('send-btn').disabled = false;
+}
+
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+function handleImage(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const result = ev.target.result;
+    pendingImageBase64 = result.split(',')[1];
+    pendingImageType = file.type;
+    document.getElementById('preview-img').src = result;
+    document.getElementById('image-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file); e.target.value = '';
+}
+
+function clearImage() {
+  pendingImageBase64 = null; pendingImageType = null;
+  document.getElementById('image-preview').style.display = 'none';
+  document.getElementById('preview-img').src = '';
+}
+
+window.onload = () => {
+  setTimeout(() => {
+    addMessage('bot',
+      `Hi there! Welcome to Noble's Sweet Tooth Cottage Bakery 🎂✨\n\nI'm here to help you get a price estimate for your custom cake and get your order started — no back-and-forth needed!\n\nYou can describe your dream cake, upload an inspiration photo, or just tell me what the occasion is. What are we celebrating? 🎉`,
+      { quickReplies: ['Birthday cake 🎂', 'Wedding cake 💍', 'Baby shower 🍼', 'Quinceañera 👑', 'Corporate event 🏢', 'Other occasion'] }
+    );
+  }, 600);
+};
+</script>
+</body>
+</html>
