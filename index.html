@@ -75,6 +75,8 @@
   #hb-note { padding: 10px 20px; background: #fff9f5; border-bottom: 1px solid #f0e4d8; font-size: 12px; color: #8a6a55; line-height: 1.55; }
   #hb-form-wrap { padding: 4px 0 8px; min-height: 500px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init("aPB21REm1O9eqK1_2");</script>
 </head>
 <body>
 
@@ -449,6 +451,29 @@ async function sendMessage() {
       currentLead = lead;
       extras.leadSummary = buildLeadSummary(lead);
       setTimeout(() => openHBModal(), 1400);
+      // Send email notification automatically
+      emailjs.send("service_14quitf", "template_lu83gpk", {
+        to_email: "noblesweettooth_orders@gmail.com",
+        from_name: lead.name || "New Customer",
+        customer_name: lead.name || "—",
+        customer_email: lead.email || "—",
+        customer_phone: lead.phone || "—",
+        event_type: (lead.event || "—") + " on " + (lead.eventDate || "—"),
+        servings: lead.servings || "—",
+        tiers: (lead.tiers || "—") + " · " + (lead.size || "—"),
+        design: lead.design || "—",
+        theme_colors: (lead.theme || "—") + " · " + (lead.colors || "—"),
+        flavor: lead.flavor || "—",
+        filling: lead.filling || "—",
+        frosting: lead.frosting || "—",
+        dietary: lead.dietary || "None",
+        pickup_delivery: lead.pickupOrDelivery || "—",
+        estimate: lead.estimate || "—",
+        notes: lead.notes || "None",
+        reply_to: lead.email || "noblessweettooth2022@gmail.com",
+        message: "Name: " + (lead.name||"—") + "\nPhone: " + (lead.phone||"—") + "\nEmail: " + (lead.email||"—") + "\nEvent: " + (lead.event||"—") + " on " + (lead.eventDate||"—") + "\nServings: " + (lead.servings||"—") + "\nTiers/Size: " + (lead.tiers||"—") + " · " + (lead.size||"—") + "\nDesign: " + (lead.design||"—") + "\nTheme/Colors: " + (lead.theme||"—") + " · " + (lead.colors||"—") + "\nFlavor: " + (lead.flavor||"—") + "\nFilling: " + (lead.filling||"—") + "\nFrosting: " + (lead.frosting||"—") + "\nDietary: " + (lead.dietary||"None") + "\nPickup/Delivery: " + (lead.pickupOrDelivery||"—") + "\nEstimate: " + (lead.estimate||"—") + "\nNotes: " + (lead.notes||"None")
+      }).then(() => console.log("Order notification sent"))
+        .catch(err => console.error("Email failed:", err));
     }
     const qr = getQuickReplies(response);
     if (qr) extras.quickReplies = qr;
